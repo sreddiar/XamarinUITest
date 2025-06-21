@@ -1,0 +1,85 @@
+Defining Minimum Viable Products (MVPs) is crucial for an IntelliJ plugin, especially one involving AI and external integrations. An MVP should deliver core value with the least effort, allowing you to get feedback and iterate.
+
+Here are two distinct MVP phases for your IntelliJ plugin, with detailed requirements for each:
+
+MVP 1: Manual Page Source Input & Basic AI-Powered Locator Suggestions
+This MVP focuses on validating the core value proposition: leveraging AI to suggest locators. It keeps the input mechanism simple to minimize initial development complexity.
+
+Goal: Provide users with a basic tool to get AI-generated locator suggestions for a given web page and integrate them into a new Page Object.
+
+Functional Requirements:
+
+Plugin Activation & UI:
+
+FR1.1: A new "Page Object Creator" Tool Window accessible from IntelliJ's "View > Tool Windows" menu.
+FR1.2: The tool window contains an input field for the user to paste a full webpage URL.
+FR1.3: A button "Generate Page Object" to trigger the AI analysis.
+Page Source Retrieval (User-Driven):
+
+FR2.1: The plugin uses the provided URL to make an HTTP GET request and retrieve the full HTML page source.
+FR2.2 (Fallback): Optionally, a second input field for users to directly paste raw HTML content as an alternative to URL.
+AI Integration (Amazon Q / Gemini AI):
+
+FR3.1: The plugin sends the retrieved HTML page source (or a relevant portion of it) to the configured AI service API.
+FR3.2: The prompt to the AI should instruct it to identify common UI elements (e.g., buttons, text fields, links, tables) and suggest robust Selenium locators (prioritizing ID, then CSS selector, then XPath) for each.
+FR3.3: The plugin receives the AI's response, which is expected to be structured data (e.g., JSON) containing element names and their suggested locators.
+Display & Selection of Suggestions:
+
+FR4.1: The tool window displays the AI-generated element names and their suggested locators in a readable format (e.g., a table or a list).
+FR4.2: Users can select one or more suggested locators from the displayed list.
+FR4.3: A "Copy to Clipboard" button to copy selected locator definitions (e.g., By.id("username")) or a full WebElement declaration (e.g., @FindBy(id="username") public WebElement usernameField;).
+Basic Code Generation:
+
+FR5.1: Upon clicking "Generate Page Object," the plugin prompts the user for a Page Object class name and package.
+FR5.2: The plugin creates a new Java (or Kotlin) class file in the specified location.
+FR5.3: The newly created class includes basic Selenium imports and static By declarations or @FindBy annotations for the AI-suggested locators.
+FR5.4: The generated class should include a constructor that takes a WebDriver instance.
+Non-Functional Requirements:
+
+Reliability: Basic error handling for network issues (e.g., URL not reachable), AI API errors, and invalid HTML input. Provide user-friendly error messages.
+Usability: Intuitive UI, clear labels, and immediate feedback for user actions.
+Performance: AI requests should be asynchronous to prevent UI freezing. The process from URL input to displaying suggestions should be reasonably fast (e.g., under 10 seconds for typical pages).
+Logging: Log key events and errors to IntelliJ's event log or a custom log file for debugging.
+MVP 2: Automated Page Source Capture & Enhanced Code Generation
+This MVP builds upon MVP 1 by adding significant user convenience features, particularly the companion browser extension, and more sophisticated code generation.
+
+Goal: Automate the page source retrieval process and provide more robust, customizable Page Object generation capabilities.
+
+Functional Requirements (building on MVP 1):
+
+Companion Browser Extension Integration:
+
+FR1.1: Develop a lightweight Chrome (and/or Firefox) browser extension.
+FR1.2: The extension provides a button or context menu option to "Capture Page Source."
+FR1.3: The extension sends the current page's full HTML source to the IntelliJ plugin. This will likely involve the plugin starting a local HTTP server and the extension making a POST request to it.
+FR1.4: The plugin automatically receives and processes the HTML from the extension without manual user pasting.
+FR1.5 (Advanced Extension): The extension allows users to select specific elements on the web page, and only the HTML of the selected element (and its immediate ancestors/siblings for context) is sent to the plugin for focused AI analysis.
+Enhanced AI Prompting & Analysis:
+
+FR2.1: The plugin passes more context to the AI (e.g., current file, existing Page Object structure, user selection) to refine locator suggestions.
+FR2.2: AI is prompted to suggest element names based on the HTML content and common UI patterns (e.g., <input type="text" id="user"> suggests usernameInput or userField).
+Advanced Code Generation & Refactoring:
+
+FR3.1: Update Existing Page Objects: When generating a Page Object, the plugin can detect if a class with the same name already exists. If it does, it offers to add new locators and methods to the existing class instead of creating a new one.
+FR3.2: Locator Strategy Customization: Allow users to prioritize or exclude certain locator strategies (e.g., always prefer CSS over XPath, never use By.className if non-unique).
+FR3.3: Generated Method Stubs: For each generated locator, offer to generate common method stubs (e.g., for a usernameInput locator: typeUsername(String text), getUsernameText(), isUsernameInputVisible()).
+FR3.4: Preview Generated Code: Before committing changes, show a preview of the code that will be added/modified in a diff-like view.
+FR3.5: Code Formatting: Ensure generated code adheres to the project's code style settings.
+FR3.6: Error/Warning Highlighting: Highlight potential issues (e.g., non-unique locators detected by AI, or locators that might break easily).
+UI/UX Improvements:
+
+FR4.1: More interactive display of AI suggestions, possibly with a tree-like structure reflecting the DOM for easier element selection.
+FR4.2: Option to rename suggested element names before generating code.
+FR4.3: Integration with IntelliJ's "Generate" menu (Alt+Insert) for context-aware Page Object actions.
+Non-Functional Requirements:
+
+Security:
+Secure communication channel between browser extension and IntelliJ plugin (e.g., using HTTPS for the local server if self-signed certs are manageable, or a robust token-based authentication).
+Input sanitization to prevent injection vulnerabilities if the AI response is used directly in code generation without proper escaping.
+Performance: Optimize HTML parsing and AI communication for larger and more complex web pages.
+User Feedback: More detailed progress indicators during long-running operations (e.g., "Analyzing page...", "Communicating with AI...").
+Configuration: A settings page for the plugin where users can configure:
+AI API key.
+Preferred locator strategies.
+Code generation templates/preferences.
+Choosing which MVP to build first depends on your resources and immediate needs. MVP 1 is a good starting point to get feedback on the core AI-powered locator suggestion. MVP 2 significantly enhances the user experience and automation capabilities, leveraging the companion browser extension for a smoother workflow.
